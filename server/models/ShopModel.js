@@ -5,7 +5,12 @@ const shopSchema = new Schema({
     location: Object,
     name: String,
     icon: String,
-    photo: String,
+    photoRef: String,
+    photo : {
+        contentType: String,
+        //size: String,
+        data: Buffer
+    },
     types: Array
 });
 

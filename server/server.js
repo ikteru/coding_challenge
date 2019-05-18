@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 const Models = require('./models/models');
 const request = require('request-promise');
+const fs = require('fs');
 
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
@@ -52,49 +53,64 @@ app.get('/auth', checkJwt, (req,res)=> {
     res.send("YOU'RE SET")
 })
 
-
 // get all shops
 app.get('/shops', (req, res) => {
-
-    Models.ShopModel.find().then(
-        shops => res.send(shops)
+    Models.ShopModel.find().lean().then(
+        result => res.send(result)
     )
-
     // const options = { 
     //     method: 'GET',
     //     url: 'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
     //     qs: { 
-    //         location:  req.params.lat + "," + req.params.lng,
+    //         location:  req.query.lat + "," + req.query.lng,
     //         radius: '1000',
-    //         type: req.params.shopType ,
-    //         key: 'AIzaSyBqJDXoWfIY0qli8M7k1x1kR1LUQ4kBcZs' 
+    //         type: req.query.shopType ,
+    //         key: process.env.API_KEY 
     //     },
-    //     headers: { 
-    //         'Postman-Token': '3d1428ca-7207-4cf6-bf5b-0b24573fb263',
-    //         'cache-control': 'no-cache' 
-    //     } 
+    //     json: true
     // };
 
-    // request(options)
-    //     .then( response => JSON.parse(response))
-    //     .then(
-    //         result => {
-    //             console.log(result)
-    //             return result.results.map(
+    // request(options).then( (googlePlaces)=> {
+    //             return googlePlaces.results.map(
     //                 place => {
     //                     const temp = {
     //                         "location": place.geometry.location,
     //                         "name": place.name,
     //                         "icon": place.icon,
     //                         "types": place.types,
-    //                         "photo": place.photos[0] ? place.photos[0].photo_reference : "",
+    //                         "photoRef": place.photos[0] ? place.photos[0].photo_reference : "",
+    //                         "photo": {}
     //                     }
 
     //                     return temp;
     //                 }
     //             )
     //         }
-    //     ).then( result => res.send(result))
+    //     ).then(
+    //         (places) => {
+    //             for( let place of places ){
+    //                 const options = {
+    //                     method: "GET",
+    //                     url: "https://maps.googleapis.com/maps/api/place/photo",
+    //                     qs: {
+    //                     maxwidth: 400,
+    //                     photoreference: "",
+    //                     key: process.env.API_KEY
+    //                     },
+    //                     encoding: null
+    //                 }
+    //                 options.qs.photoreference = place.photoRef
+    //                 request(options, (err, response, buffer ) =>{
+    //                     place.photo.contentType = response.headers["content-type"]
+    //                     //place.photo.size = response.headers["content-length"]
+    //                     place.photo.data = buffer
+    //                     Models.ShopModel(place).save()
+    //                 })
+    //             }
+    //         }
+    //     ).then( ()=> {
+    //         res.send("Done.")
+    //     })
 });
 
 app.post('/shops', (req, res)=>{
@@ -111,6 +127,20 @@ app.get('/shops/:id', (req, res) => {
         }
     )
 });
+
+app.get('/shops/:id/photo', (req, res) => {
+
+    Models.ShopModel.findOne({ _id: req.params.id}).lean().exec(
+        (err, response ) => {
+            if(err){
+                res.status(404).send("Not found")
+            }
+            const photo = response.photo.data.buffer
+            res.setHeader("content-type", response.photo.contentType)
+            res.send(photo)
+        }
+    )
+})
 
 app.get('/users', (req, res) => {
     Models.UserModel.find().lean().exec( (err, response) => {
