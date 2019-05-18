@@ -1,46 +1,55 @@
 import React, { Component } from 'react'
-import axios from 'axios';
 import Shop from './Shop';
+import PropTypes from 'prop-types';
+import { withStyles } from '@material-ui/core/styles';
+import Paper from '@material-ui/core/Paper';
+import Grid from '@material-ui/core/Grid';
 
-export default class Shops extends Component {
-    constructor(props) {
-        super(props);
+const styles = theme => ({
+  root: {
+    margin: "30px 50px",
+    flexGrow: 1,
+  },
+  paper: {
+    padding: theme.spacing.unit * 2,
+    textAlign: 'center',
+    color: theme.palette.text.secondary,
+  },
+});
+
+class Shops extends Component {
     
-        this.state = {
-          Shops: null,
-        };
-    }
-
-
-    async componentDidMount(){
-        const shops = this.props.favorite 
-        ? 
-        await this.getShops()
-        : 
-        (await axios.get('http://localhost:8081/shops')).data;
-
-        this.setState({
-            Shops: shops
-        })
-    }
     render() {
-        const generatedShops = this.state.Shops ? this.state.Shops.map( shop => {
+        const { classes } = this.props;
+
+        const generatedShops = this.props.shops ? this.props.shops.map( (shop,index) => {
             return (
-            <Shop
-                name={shop.name}    
-                icon={shop.icon}
-                photoRef={shop.photo}
-            >
-            </Shop>
+                <Grid item xs={12} sm={6} md={3} key={index}>
+
+                    <Shop
+                            name={shop.name}    
+                            icon={shop.icon}
+                            shopId={shop._id}
+                        >
+                    </Shop>
+                </Grid>
             )
         }) : "";
 
         return (
-        <div>
-            {
-                generatedShops
-            }
-        </div>
+            <div className={classes.root} >
+                <Grid container spacing={24}>
+                {
+                    generatedShops
+                }
+                </Grid>
+            </div>
         )
     }
 }
+
+Shops.propTypes = {
+    classes: PropTypes.object.isRequired,
+};
+  
+export default withStyles(styles)(Shops)
