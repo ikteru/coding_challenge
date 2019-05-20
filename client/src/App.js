@@ -43,7 +43,7 @@ class App extends React.Component {
         
         <NewNavbar />
         
-        <Route path="/" render={ ()=> <DashboardContainer authClient={authClient} /> } />
+        {/* <Route path="/" render={ ()=> <DashboardContainer authClient={authClient} /> } /> */}
         <SecuredRoute path="/nearbyShops" render={(props) => <DashboardContainer {...props} />} checkingSession={this.state.checkingSession} />
         <SecuredRoute path="/likedShops" render={(props) => <DashboardContainer  {...props} />} checkingSession={this.state.checkingSession} />
 

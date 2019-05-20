@@ -3,6 +3,7 @@ const Schema = require('mongoose').Schema;
 
 const shopSchema = new Schema({
     location: Object,
+    userId: String,
     name: String,
     icon: String,
     photoRef: String,

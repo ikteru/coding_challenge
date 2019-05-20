@@ -20,9 +20,9 @@ const styles = theme => ({
 class Shops extends Component {
     
     render() {
-        const { classes } = this.props;
-
-        const generatedShops = this.props.shops ? this.props.shops.map( (shop,index) => {
+        const { classes, shops, like, dislike, ...rest } = this.props;
+        
+        const generatedShops = shops && shops.length !== 0 ? shops.map( (shop,index) => {
             return (
                 <Grid item xs={12} sm={6} md={3} key={index}>
 
@@ -30,6 +30,10 @@ class Shops extends Component {
                             name={shop.name}    
                             icon={shop.icon}
                             shopId={shop._id}
+                            photo={shop.photo.data}
+                            like={like}
+                            dislike={dislike}
+                            { ...rest }
                         >
                     </Shop>
                 </Grid>

@@ -14,7 +14,6 @@ import red from '@material-ui/core/colors/red';
 import FavoriteIcon from './FavoriteIcon'
 import TrashIcon from './TrashIcon'
 
-import { BACKEND_URL } from '../configs';
 
 const styles = theme => ({
   card: {
@@ -43,8 +42,7 @@ class RecipeReviewCard extends React.Component {
   };
 
   render() {
-    const { classes } = this.props;
-
+    const { classes, shopId, like, dislike, location } = this.props;
     return (
       <Card className={classes.card}>
         <CardHeader
@@ -58,7 +56,7 @@ class RecipeReviewCard extends React.Component {
 
         <CardMedia
           className={classes.media}
-          image={BACKEND_URL + "/shops/" + this.props.shopId + "/photo"}
+          image={"data:image/jpg;base64, " + this.props.photo}
           title="Paella dish"
         />
 
@@ -70,10 +68,15 @@ class RecipeReviewCard extends React.Component {
         </CardContent> */}
 
         <CardActions className={classes.actions} disableActionSpacing>
-          <IconButton aria-label="Add to favorites" onClick={()=> console.log("Fav Icon Clicked")}>
-            <FavoriteIcon />
-          </IconButton>
-          <IconButton aria-label="Share" onClick={()=> console.log("Trash Icon Clicked")}>
+          {
+            location.pathname !== "/likedShops" && (
+              <IconButton aria-label="Like" onClick={()=> like(shopId)}>
+                <FavoriteIcon />
+              </IconButton>
+            )
+          }
+          
+          <IconButton aria-label="Dislike" onClick={()=> dislike(shopId)}>
             <TrashIcon />
           </IconButton>
           

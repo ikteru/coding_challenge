@@ -50,13 +50,15 @@ function NavBar(props) {
     const { classes } = props;
 
     const { isAuthenticated, signIn, getProfile } = authClient;
-    console.log("Profile: ", getProfile() );
+    //console.log("Profile: ", getProfile() );
     return (
       <div className={classes.root}>
       <AppBar position="static" style={{ background: "white" }}>
         <Toolbar>
             <Typography variant="h6" color="primary" className={classes.grow}>
-            <CustomLink to="/">iShop</CustomLink>
+              <CustomLink to="/">
+                Random.io
+              </CustomLink>
             </Typography>
             <div className={classes.sectionDesktop}>
             <CustomLink to="/nearbyShops">
