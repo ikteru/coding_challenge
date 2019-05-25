@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import Shop from './Shop';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 
 const styles = theme => ({
@@ -21,16 +20,12 @@ class Shops extends Component {
     
     render() {
         const { classes, shops, like, dislike, ...rest } = this.props;
-        
         const generatedShops = shops && shops.length !== 0 ? shops.map( (shop,index) => {
             return (
                 <Grid item xs={12} sm={6} md={3} key={index}>
 
                     <Shop
-                            name={shop.name}    
-                            icon={shop.icon}
-                            shopId={shop._id}
-                            photo={shop.photo.data}
+                            shop={shop}
                             like={like}
                             dislike={dislike}
                             { ...rest }

@@ -7,7 +7,9 @@ export function AxiosClient(){
       {
           baseURL: BACKEND_URL,
           timeout: 1000,
-          headers: {'Authorization': `Bearer ${authClient.getIdToken()}`}
+          headers: {
+            'Authorization': `Bearer ${authClient.getIdToken()}`,
+          }
       }
   )
 }

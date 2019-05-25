@@ -42,21 +42,21 @@ class RecipeReviewCard extends React.Component {
   };
 
   render() {
-    const { classes, shopId, like, dislike, location } = this.props;
+    const { classes, shop, like, dislike, location } = this.props;
     return (
       <Card className={classes.card}>
         <CardHeader
           className={classes.header}
           avatar={
-            <img alt="Remy Sharp" src={this.props.icon} className={classes.avatar} />
+            <img alt="Remy Sharp" src={shop.icon} className={classes.avatar} />
           }
-          title={this.props.name}
+          title={shop.name}
           //subheader="September 14, 2016"
         />
 
         <CardMedia
           className={classes.media}
-          image={"data:image/jpg;base64, " + this.props.photo}
+          image={"data:image/jpg;base64, " + shop.photo.data}
           title="Paella dish"
         />
 
@@ -70,13 +70,13 @@ class RecipeReviewCard extends React.Component {
         <CardActions className={classes.actions} disableActionSpacing>
           {
             location.pathname !== "/likedShops" && (
-              <IconButton aria-label="Like" onClick={()=> like(shopId)}>
+              <IconButton aria-label="Like" onClick={()=> like(shop)}>
                 <FavoriteIcon />
               </IconButton>
             )
           }
           
-          <IconButton aria-label="Dislike" onClick={()=> dislike(shopId)}>
+          <IconButton aria-label="Dislike" onClick={()=> dislike(shop)}>
             <TrashIcon />
           </IconButton>
           

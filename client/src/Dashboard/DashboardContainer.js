@@ -1,7 +1,12 @@
 import React, { Component } from 'react'
 import authClient from '../Auth/Auth'
-import Shops from '../Shops/Shops'
 import { AxiosClient, getCurrentPosition} from '../Auth/Utils'
+import NearbyShops from '../pages/NearbyShops'
+import LikedShops from '../pages/LikedShops'
+import NewNavbar from '../Navbar/NewNavbar'
+import { Route } from 'react-router-dom'
+import SecuredRoute from '../Auth/SecuredRoute'
+import Callback from '../Auth/Callback'
 
 //This Component is user as a container to contain the state of the app
 //It doesn't contain any UI whatsover, it's only mission is to manage the state of the app
@@ -17,10 +22,10 @@ export class DashboardContainer extends Component {
                 userId: ""
             },
             location: {
-                lat: "33.995521",
-                lng: "-6.8500229,16"
+                lat: -33.8670522,
+                lng: 151.1957362
             },
-            shopType:"restaurant",
+            shopType:"clothing_store",
             currentRoute: this.props.location && this.props.location.pathname,
             nearbyShops:[],
             userLikedShops:[],
@@ -35,6 +40,11 @@ export class DashboardContainer extends Component {
         this.addToLikedShops = this.addToLikedShops.bind(this);
         this.handleRemovingUserLikedShop = this.handleRemovingUserLikedShop.bind(this);
         this.getLocation = this.getLocation.bind(this);
+        this.getLikedShops = this.getLikedShops.bind(this);
+        this.getDislikedShops = this.getDislikedShops.bind(this);
+        this.getShopsPhotos = this.getShopsPhotos.bind(this);
+        this.getShops = this.getShops.bind(this);
+
 
     }
 
@@ -60,40 +70,42 @@ export class DashboardContainer extends Component {
 
     //Is called when user likes a shop
     //It does as it's named! :p
-    async handleAddingUserLikedShop(shopId){
+    async handleAddingUserLikedShop(likedShop){
         let userId = authClient.getProfile().sub;
-        await this.addToLikedShops( userId , shopId)
+        await this.addToLikedShops( userId , likedShop)
         const oldState = this.state.nearbyShops;
+        console.log("OLD STATE :::::::::::: ", oldState)
         const newState = oldState.filter(
             shop => {
-                console.log(shop._id !== shopId)
-                return shop._id !== shopId
+                console.log(shop.shopId !== likedShop.shopId)
+                return shop.shopId !== likedShop.shopId
             }
         )
+        console.log("NEW STATE :::::::::::: ", newState)
         this.setState({ nearbyShops: newState});
 
     }
     //IS called when a user dislikes a shop
-    async handleAddingUserDislikedShop(shopId){
+    async handleAddingUserDislikedShop(dislikedshop){
         let userId = authClient.getProfile().sub;
 
         const oldState = this.state.nearbyShops;
         const newState = oldState.filter(
             shop => {
-                console.log(shop._id !== shopId)
-                return shop._id !== shopId
+                console.log(shop.shopId !== dislikedshop.shopId)
+                return shop.shopId !== dislikedshop.shopId
             }
         )
         this.setState({ nearbyShops: newState});
 
-        await this.addToDislikedShops( userId , shopId)
+        await this.addToDislikedShops( userId , dislikedshop)
     }
     //Is called when a user removes a shop from his favorites
-    async handleRemovingUserLikedShop(shopId){
-        console.log(shopId)
+    async handleRemovingUserLikedShop(deletedShop){
+        console.log(deletedShop.shopId)
         let userId = authClient.getProfile().sub;
 
-        await this.DeleteFromLikedShops(userId, shopId);
+        await this.DeleteFromLikedShops(userId, deletedShop);
 
     }
 
@@ -121,11 +133,11 @@ export class DashboardContainer extends Component {
         //Check if user is stored in the db and add the user to the db in case they're not registered
         //InitializeUserProfile is also triggered inside addNewUserToDatabase in order to reinitialize the profile
         //after adding the user to the db
-        await AxiosClient().get("/users/" + user.userId)
+        let result = await AxiosClient().get("/users/" + user.userId)
                 .then( response => {
                     let userData = response.data
-                    this.setState({ userLikedShopsIds : userData.likedShops})
-                    this.setState({ userDislikedShopsIds : userData.dislikedShops })
+                    this.setState({ userLikedShopsIds : userData.likedShopsIds})
+                    this.setState({ userDislikedShopsIds : userData.dislikedShopsIds })
                     return response;
                 })
                 .catch(
@@ -134,14 +146,10 @@ export class DashboardContainer extends Component {
                             this.addNewUserToDatabase(user)
                             return Promise.resolve({ success: true, data:"Successfully added new user to db"})
                         } 
-                        return err;
+                        return Promise.resolve({success: true, data:"Successfully added user to db"});
                     }
                 )
-
-        //Get the user liked and disliked shops from the db now that we know he is in the db
-        await this.getLikedShops(user.userId);
-        await this.getDislikedShops(user.userId);
-        
+        return result;
     }
 
     //Does as the name suggests
@@ -180,25 +188,55 @@ export class DashboardContainer extends Component {
         //Which are the likedShops and the dislikedShops
         //Then add them to the shopsToOmit array so we can take them off the list of shops to display
         let shopsToOmit = [];
-        if( this.state.userLikedShops || this.state.userDislikedShops ){
+        if( this.state.userDislikedShopsIds || this.state.userDislikedShopsIds ){
             shopsToOmit = this.state.userLikedShopsIds.concat(this.state.userDislikedShopsIds)
         }
         
         //Get the location of the user using the browser's navigator.location object.
-        await this.getLocation();
+        //await this.getLocation();
         const { lat, lng } = this.state.location;
         //Get the nearby shops from the backend by using the shop type and the coordinates of the user
         //Once fetched and filtered to omit the liked/disliked shops, the shops will be stored in the state
-        return await AxiosClient().get("/shops?shopType="+ this.state.shopType + "&lat=" + lat + "&lng=" + lng +"&userId=" + this.state.user.userId)
-            .then( response => response.data)
+        await AxiosClient().get("/shops?shopType="+ this.state.shopType + "&lat=" + lat + "&lng=" + lng +"&userId=" + this.state.user.userId, {timeout: 8000})
+            .then( response => response.data.data)
             .then( shops => {
+                console.log("SHOOOOOOOOOOOOOOOOOOOOOOOOPSSS :::: ", shops)
                 const nearbyShops = shops.filter(
                     shop => {
-                        return !shopsToOmit.includes(shop._id)
+                        return !shopsToOmit.includes(shop.shopId)
                     }
                 )
                 this.setState({ nearbyShops: nearbyShops})
             })
+    }
+
+    //Get the photos of the shops 
+    async getShopsPhotos(shopsType){
+
+        let shops = this.state[shopsType];
+        let shopsWithPhotos = [];
+        let counter = 0;
+        for ( let shop of shops ){
+            
+            await AxiosClient().get("/photos/" + shop.photoRef ).then(
+                result => {
+                    shop.photo.contentType = result.data.contentType;
+                    shop.photo.data = result.data.data;
+                    
+                    return shop;
+                }
+            )
+            
+            shopsWithPhotos.push(shop)
+            counter++;
+            if(counter === shops.length){
+                this.setState({ nearbyShops: shopsWithPhotos})
+                return true;
+            }
+            
+        }
+
+        
     }
 
     //Gets the liked shops of the user from the backend using their userId
@@ -207,7 +245,9 @@ export class DashboardContainer extends Component {
         return await AxiosClient().get("/users/" + userId + "/likedShops")
             .then( response => response.data)
             .then( likedShops => {
-                this.setState({userLikedShops: likedShops})
+                if( likedShops && likedShops.length !== 0 ){
+                    this.setState({userLikedShops: likedShops})
+                }
                 return likedShops;
             })
     }
@@ -225,23 +265,23 @@ export class DashboardContainer extends Component {
 
     //Adds a shop to the likedShops of a user using their userId and the shopId of the shop to add to favorites
     //It first adds the shops to the state then proceeds to save the shop to the database using an HTTP PUT request
-    async addToLikedShops(userId, shopId){
+    async addToLikedShops(userId, likedShop){
         let url = "/users/" + userId + "/likedShops"
         let alreadyInLikedShops = false;
 
         this.state.userLikedShops.forEach( shop => {
-            if (shop.shopId === shopId){
+            if (shop.shopId === likedShop.shopId){
                 alreadyInLikedShops = true
             }
         })
-        return !alreadyInLikedShops && await AxiosClient().put(url, { shopId })
-            .then(response => {
-                return response.data
-            })
-            .then( shop => {
+        return !alreadyInLikedShops && await AxiosClient().put(url, { shopId : likedShop.shopId })
+
+            .then( (result) => {
+                console.log("RESULTTTTTTTTTTTTTTTTTTTTTtttt ::::: ", result)
                 let newLikedShopsList = this.state.userLikedShops;
-                newLikedShopsList.push(shop)
+                newLikedShopsList.push(likedShop)
                 this.setState({ userLikedShops: newLikedShopsList })
+                return result;
             }).catch(
                 err => {
                     console.error("Error adding shop to liked shops db: ", err)
@@ -252,24 +292,23 @@ export class DashboardContainer extends Component {
 
     //Adds a shop to the dislikedShops of a user using their userId and the shopId of the shop to add to dislikedshops
     //It first adds the shops to the state then proceeds to save the shop to the database using an HTTP PUT request
-    async addToDislikedShops(userId, shopId){
+    async addToDislikedShops(userId, dislikedshop){
         let url = "/users/" + userId + "/dislikedShops"
         let alreadyInDislikedShops = false;
 
         this.state.userLikedShops.forEach( shop => {
-            if (shop.shopId === shopId){
+            if (shop.shopId === dislikedshop.shopId){
                 alreadyInDislikedShops = true
             }
         })
-        return !alreadyInDislikedShops && await AxiosClient().put(url, { shopId })
-            .then( response => response.data)
-            .then( shop => {
+        return !alreadyInDislikedShops && await AxiosClient().put(url, { shopId: dislikedshop.shopId })
+            .then( () => {
                 let newDislikedShopsList = this.state.userDislikedShops;
-                newDislikedShopsList.push(shop);
+                newDislikedShopsList.push(dislikedshop);
                 this.setState({ userDislikedShops: newDislikedShopsList})
                 this.state.userLikedShops.forEach(
                     shop => {
-                        if( shop._id === shopId){
+                        if( shop.shopId === dislikedshop.shopId){
                             let newLikedShopsList = this.state.userLikedShops;
                             this.setState({likedShops : newLikedShopsList })
                         }
@@ -279,10 +318,10 @@ export class DashboardContainer extends Component {
     }
 
     //Deletes a shop from the likedShops list in the state then proceeds to delete it from the db as well
-    async DeleteFromLikedShops(userId,shopId){
+    async DeleteFromLikedShops(userId, deletedShop ){
         let url = "/users/" + userId + "/likedShops";
 
-        return await AxiosClient().delete(url,{ shopId })
+        return await AxiosClient().delete(url,{ shopId: deletedShop.shopId })
             .then( response => response.data)
             .then( shop => {
                 let newLikedShopsList = this.state.userLikedShops;
@@ -292,20 +331,64 @@ export class DashboardContainer extends Component {
     }
 
 
-    async componentDidMount(){
+    async componentWillMount(){
 
-        await this.initializeUserProfile().then( ()=> this.getShops())
+        await this.initializeUserProfile()
 
     }
+
     render() {    
         return (
             <div>
-                {
-                    this.state.currentRoute === "/nearbyShops" && <Shops { ...this.props } shops={this.state.nearbyShops} like={this.handleAddingUserLikedShop} dislike={this.handleAddingUserDislikedShop}></Shops>
-                }
-                {
-                    this.state.currentRoute === "/likedShops" && <Shops { ...this.props } shops={this.state.userLikedShops} dislike={this.handleRemovingUserLikedShop}></Shops>
-                }
+
+                <NewNavbar></NewNavbar>
+                
+                <Route exact path='/callback' component={Callback}/>   
+
+                <SecuredRoute path="/" exact render={
+                        (props) => {
+                            return (
+                                <Route path ="/nearbyShops" render={ (props)=>{
+                                            return (<NearbyShops { ... this.props } 
+                                                    shops={this.state.nearbyShops}
+                                                    like={this.handleAddingUserLikedShop} 
+                                                    dislike={this.state.handleAddingUserDislikedShop}
+                                                    getShops={this.getShops}
+                                                    getShopsPhotos ={this.getShopsPhotos} 
+                                                /> 
+                                            )
+                                        } 
+                                    }
+                                />
+                            )
+                        }
+
+                    } 
+                    
+                    checkingSession={this.state.checkingSession} 
+                />
+
+                <SecuredRoute path="/" exact render={
+                        (props) => {
+                            return (
+                                <Route path ="/likedShops" render={ 
+                                            (props)=><LikedShops {...props} 
+                                            shops={this.state.userLikedShops} 
+                                            userId={this.state.user.userId}
+                                            dislike={this.handleRemovingUserLikedShop}
+                                            getLikedShops={this.getLikedShops}
+                                            getShopsPhotos={this.getShopsPhotos} 
+                                        />
+                                    } 
+                                />
+                            )
+                        }
+
+                    } 
+                    
+                    checkingSession={this.state.checkingSession} 
+                />
+                
             </div>
         )
     }

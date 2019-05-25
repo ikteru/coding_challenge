@@ -37,17 +37,13 @@ class App extends React.Component {
 
   render(){
     return (
-      <BrowserRouter>
-        
-        <Route exact path='/callback' component={Callback}/>
-        
-        <NewNavbar />
-        
-        {/* <Route path="/" render={ ()=> <DashboardContainer authClient={authClient} /> } /> */}
-        <SecuredRoute path="/nearbyShops" render={(props) => <DashboardContainer {...props} />} checkingSession={this.state.checkingSession} />
-        <SecuredRoute path="/likedShops" render={(props) => <DashboardContainer  {...props} />} checkingSession={this.state.checkingSession} />
+        <div>
 
-      </BrowserRouter>
+          {/* <Route path="/" render={ ()=> <DashboardContainer authClient={authClient} /> } /> */}
+          {/* <SecuredRoute path="/" exact render={(props) => <DashboardContainer {...props} />} checkingSession={this.state.checkingSession} /> */}
+          <DashboardContainer />
+        </div>
+
     );
   } 
 }

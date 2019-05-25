@@ -9,8 +9,8 @@ const UserSchema = new Schema({
     searchedLocations: Array,
     name: String,
     nickname: String,
-    likedShops: Array,
-    dislikedShops: Array
+    likedShopsIds: Array,
+    dislikedShopsIds: Array
 });
 
 const UserModel = mongoose.model('user', UserSchema);

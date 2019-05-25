@@ -3,7 +3,10 @@ const Schema = require('mongoose').Schema;
 
 const shopSchema = new Schema({
     location: Object,
-    userId: String,
+    userId: {
+        type:"String",
+        unique: true
+    },
     name: String,
     icon: String,
     photoRef: String,
