@@ -14,7 +14,7 @@ const {
   synthesizeShops,
   firstTimeSearching,
   saveToDb,
-  getLikedShops
+  getShopDetails
 } = require("./utils");
 
 //Dependencies for JWT token validation
@@ -61,7 +61,7 @@ app.use(cors());
 app.use(morgan("combined"));
 
 //Check jwt
-app.use(checkJwt);
+//app.use(checkJwt);
 
 //Catch jwt validation error
 app.use(function(err, req, res, next) {
@@ -219,76 +219,55 @@ app.delete("/users/:id/dislikedShops", (req, res) => {
   );
 });
 
-app.get("/users/:id/likedshops", async (req, res) => {
-  const user = await Models.UserModel.findOne({ userId: req.params.id })
-
-  if( !user ){
-    res.status(404).send("Couldn't find user ... ")
-  }else{
-    console.log("USER REQUESSSST :::: ", user)
-    const result = await checkSuccess(getLikedShops(user))
-    if( !result.success ){
-      res.status(404).send(result.data)
-    }else{
-      const likedShops = result.data;
-      console.log("RESULT DAAATAA :::: of liekd shops :::: ", result.data)
-      res.send(likedShops)
-    }
-  }
-  
-});
-
-app.get("/users/:id/dislikedshops", (req, res) => {
-  checkSuccess(Models.UserModel.findOne({userId: req.params.id})).then(
-    async result => {
-      if (result.success) {
-        console.log(result)
-        if(result.data.length !== 0 ){
-          const dislikedShopsIds = result.data.dislikedShopsIds;
-          const dislikedShops = [];
-
-          for( let shopId of dislikedShopsIds ){
-            const options = { 
-              method: 'GET',
-              url: 'https://maps.googleapis.com/maps/api/place/details/json',
-              qs: { 
-                placeid: shopId,
-                fields: 'name,place_id,photos,types,icon,geometry',
-                key: 'AIzaSyDz5lQV5PQ6ULRgiuEoFahas_uoGWrHIsQ' 
-              },
-              json: true
-            }
-            await checkSuccess(requestPromise(options)).then(result => {
-              if(result.success){
-                const shop = result.data.result;
-                const temp = {
-                  "shopId": shop.place_id ,
-                  "location": shop.geometry.location,
-                  "name": shop.name,
-                  "icon": shop.icon,
-                  "types": shop.types,
-                  "photoRef": shop.photos ? shop.photos[0].photo_reference : "",
-                  "photo": {
-                    "contentType":"",
-                    "data": null
-                  }
-                }
-                console.log("TEMP :::: ", temp)
-                dislikedShops.push(temp)
-              }
-            });
-          }
-
-          res.send(dislikedShops)
-        }else{
-          res.status(404).send("No dislikedshop in the list .. ")
-        }
-        
-      } else {
-        res.status(500).send("Error while fetching user dislikedShops");
+app.get("/users/:id/likedshopsids", async (req, res) => {
+  await Models.UserModel.findOne({ userId: req.params.id }).then(
+    async user => {
+      if( !user ){
+        res.status(404).send("Couldn't find user ... ")
+      }else{
+        res.send(user.likedShopsIds)
       }
     }
-  );
+  )
+});
+
+app.get("/users/:id/dislikedShopsIds", async (req, res) => {
+  await Models.UserModel.findOne({ userId: req.params.id }).then(
+    async user => {
+      if( !user ){
+        res.status(404).send("Couldn't find user ... ")
+      }else{
+        res.send(user.dislikedShopsIds)
+      }
+    }
+  )
+});
+
+app.get("/likedshops/:likedShopId", async (req, res) => {
+  const result = await checkSuccess(getShopDetails(req.params.likedShopId))
+  if(result.success){
+    res.send(result.data)
+  }else{
+    res.status(404).send("Couldn't find likedshop")
+  }
+});
+
+app.get("/dislikedShops/:dislikedShopId", async (req, res) => {
+  const result = await checkSuccess(getShopDetails(req.params.dislikedShopId))
+  if(result.success){
+    res.send(result.data)
+  }else{
+    res.status(404).send("Couldn't find likedshop")
+  }
+});
+
+app.get("/dislikedshopsids/:dislikedShopId", async (req, res) => {
+  const result = await checkSuccess(getShopDetails(req.params.dislikedShopId))
+  if(result.success){
+    res.send(result.data)
+  }else{
+    res.status(404).send("Couldn't find dislikedshop")
+  }
 });
 
 // get all shops

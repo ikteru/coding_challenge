@@ -1,12 +1,11 @@
 import React from 'react';
-import NewNavbar from './Navbar/NewNavbar';
-import Navbar from './Navbar/Navbar';
 
-import { BrowserRouter, Route, withRouter } from 'react-router-dom';
-import { DashboardContainer } from './Dashboard/DashboardContainer';
+import { withRouter } from 'react-router-dom';
+import DashboardContainer from './Components/Dashboard/DashboardContainer';
 import authClient from './Auth/Auth';
-import Callback from './Auth/Callback';
-import SecuredRoute from './Auth/SecuredRoute';
+
+import { transitions, positions, Provider as AlertProvider } from 'react-alert'
+import AlertTemplate from 'react-alert-template-basic'
 
 class App extends React.Component {
   constructor(props){
@@ -23,7 +22,7 @@ class App extends React.Component {
       return;
     }
 
-    if (this.props.location.pathname === '/callback') return;
+    if(this.props.location.pathname === '/callback ') return;
     try {
       await authClient.silentAuth();
       this.forceUpdate();
@@ -36,12 +35,42 @@ class App extends React.Component {
   }
 
   render(){
+
+    // Alert provider configurations
+    const options = {
+      position: positions.BOTTOM_CENTER,
+      timeout: 5000,
+      offset: '30px',
+      transition: transitions.SCALE
+    }
+
+    //Get the user profile from Auth0 and construct a simple user object
+    const { getProfile } = authClient;
+    const userAuthProfile = getProfile();
+    
+    let user = {}
+
+    if( userAuthProfile ){
+
+      user = {
+          userId: userAuthProfile.sub,
+          name: userAuthProfile.name,
+          nickname: userAuthProfile.nickname
+      }
+    }
+
     return (
         <div>
 
           {/* <Route path="/" render={ ()=> <DashboardContainer authClient={authClient} /> } /> */}
           {/* <SecuredRoute path="/" exact render={(props) => <DashboardContainer {...props} />} checkingSession={this.state.checkingSession} /> */}
-          <DashboardContainer />
+          <AlertProvider template={AlertTemplate} {...options}>
+            <DashboardContainer 
+              checkingSession={this.state.checkingSession}
+              user={user}
+            />
+          </AlertProvider>
+        
         </div>
 
     );

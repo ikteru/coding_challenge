@@ -3,6 +3,8 @@ import Shop from './Shop';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
+import NoLikedShops from './NoLikedShops';
+
 
 const styles = theme => ({
   root: {
@@ -33,7 +35,7 @@ class Shops extends Component {
                     </Shop>
                 </Grid>
             )
-        }) : "";
+        }) : <NoLikedShops />;
 
         return (
             <div className={classes.root} >

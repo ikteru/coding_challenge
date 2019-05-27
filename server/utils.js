@@ -135,19 +135,9 @@ async function firstTimeSearching(userId, locationString) {
   return result;
 }
 
-getLikedShops = async function(user) {
-  const userLikedShopsIds = user.likedShopsIds;
+getShopDetails = async function(shopId) {
 
-  if (userLikedShopsIds.length === 0) {
-    return Promise.reject({
-      success: false,
-      data: "No liked shops found for this user..."
-    });
-  }
 
-  const likedShops = [];
-
-  for (let shopId of userLikedShopsIds) {
     const options = {
       method: "GET",
       url: "https://maps.googleapis.com/maps/api/place/details/json",
@@ -158,9 +148,8 @@ getLikedShops = async function(user) {
       },
       json: true
     };
-    let result = await checkSuccess(requestPromise(options)).then(result => {
-      if (result.success) {
-        const shop = result.data.result;
+    return await requestPromise(options).then(result => {
+        const shop = result.result;
         const temp = {
           shopId: shop.place_id,
           location: shop.geometry.location,
@@ -173,17 +162,16 @@ getLikedShops = async function(user) {
             data: null
           }
         };
-        console.log("TEMP :::: ", temp);
+        console.log("TEMP :::: ", temp.shopId);
         return temp;
+    }).catch(
+      err => {
+        console.log("Error fetching shop details from google api", err)
+        return err
       }
-    });
-    if (result.success) {
-      likedShops.push(result.data);
-    }
-  }
-  console.log("LIKED SHOPSSSSSSSSSSSSSSSSSSS", likedShops)
-  return likedShops;
-};
+    )
+    
+  };
 
 module.exports = {
   checkSuccess,
@@ -191,5 +179,5 @@ module.exports = {
   synthesizeShops,
   firstTimeSearching,
   saveToDb,
-  getLikedShops
+  getShopDetails
 };

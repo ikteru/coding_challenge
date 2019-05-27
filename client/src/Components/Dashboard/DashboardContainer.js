@@ -1,26 +1,27 @@
 import React, { Component } from 'react'
-import authClient from '../Auth/Auth'
-import { AxiosClient, getCurrentPosition} from '../Auth/Utils'
-import NearbyShops from '../pages/NearbyShops'
-import LikedShops from '../pages/LikedShops'
-import NewNavbar from '../Navbar/NewNavbar'
+import authClient from '../../Auth/Auth'
+import { AxiosClient, getCurrentPosition} from './Utils'
+import NearbyShops from '../../routes/NearbyShops'
+import LikedShops from '../../routes/LikedShops'
+import NewNavbar from '../Navbar/NavBar'
 import { Route } from 'react-router-dom'
-import SecuredRoute from '../Auth/SecuredRoute'
-import Callback from '../Auth/Callback'
+import SecuredRoute from './SecuredRoute'
+import Callback from '../../Auth/Callback'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import Welcome from '../welcome/Welcome'
+
 
 //This Component is user as a container to contain the state of the app
 //It doesn't contain any UI whatsover, it's only mission is to manage the state of the app
 //and load relevant components depending on the state
 
-export class DashboardContainer extends Component {
+
+class DashboardContainer extends Component {
     constructor(props){
         super(props);
         this.state = {
-            user:{
-                name: "",
-                nickname: "",
-                userId: ""
-            },
+            user:this.props.user,
             location: {
                 lat: -33.8670522,
                 lng: 151.1957362
@@ -31,7 +32,9 @@ export class DashboardContainer extends Component {
             userLikedShops:[],
             userDislikedShops: [],
             userLikedShopsIds: [],
-            userDislikedShopsIds:[]
+            userDislikedShopsIds:[],
+            nearbyShopsFullyLoaded: false,
+            likedShopsFullyLoaded: false
         }
 
         this.handleAddingUserDislikedShop = this.handleAddingUserDislikedShop.bind(this);
@@ -44,6 +47,7 @@ export class DashboardContainer extends Component {
         this.getDislikedShops = this.getDislikedShops.bind(this);
         this.getShopsPhotos = this.getShopsPhotos.bind(this);
         this.getShops = this.getShops.bind(this);
+        this.initializeApplicationState = this.initializeApplicationState.bind(this)
 
 
     }
@@ -64,7 +68,8 @@ export class DashboardContainer extends Component {
             }
             this.setState({ location })
         }catch(e){
-            console.log("Error getting user coords: ", e)
+            console.error("Error getting user coords: ", e)
+            toast("We're having trouble getting your current location, please allow the browser to access your location.")
         }
     }
 
@@ -74,14 +79,12 @@ export class DashboardContainer extends Component {
         let userId = authClient.getProfile().sub;
         await this.addToLikedShops( userId , likedShop)
         const oldState = this.state.nearbyShops;
-        console.log("OLD STATE :::::::::::: ", oldState)
         const newState = oldState.filter(
             shop => {
                 console.log(shop.shopId !== likedShop.shopId)
                 return shop.shopId !== likedShop.shopId
             }
         )
-        console.log("NEW STATE :::::::::::: ", newState)
         this.setState({ nearbyShops: newState});
 
     }
@@ -110,28 +113,21 @@ export class DashboardContainer extends Component {
     }
 
     // ========================================================================== //
-    // =============================   BACKEND Functions   ====================== //
+    // =============================   API Functions   ====================== //
     // ========================================================================== //
 
-    //Initializes the user profile :
+    //Initializes the application state :
     //      user info :
     //          name , nickname, userId
     //      user liked shops
     //      user dislikedshops
-    async initializeUserProfile(){
+    //All are information needed to make decisions on what shops to display and what shops not to
+    async initializeApplicationState(){
 
-        //Get the user profile from Auth0 and construct a simple user object
-        const { getProfile } = authClient;
-        const userAuthProfile = getProfile();
-        const user = {
-            userId: userAuthProfile.sub,
-            name: userAuthProfile.name,
-            nickname: userAuthProfile.nickname
-        }
-        this.setState({ user : user })
+        const { user } = this.props;
 
         //Check if user is stored in the db and add the user to the db in case they're not registered
-        //InitializeUserProfile is also triggered inside addNewUserToDatabase in order to reinitialize the profile
+        //initializeApplicationState is also triggered inside addNewUserToDatabase in order to reinitialize the profile
         //after adding the user to the db
         let result = await AxiosClient().get("/users/" + user.userId)
                 .then( response => {
@@ -142,18 +138,27 @@ export class DashboardContainer extends Component {
                 })
                 .catch(
                     err => {
-                        if( err.response.status === 404 ){
-                            this.addNewUserToDatabase(user)
-                            return Promise.resolve({ success: true, data:"Successfully added new user to db"})
-                        } 
-                        return Promise.resolve({success: true, data:"Successfully added user to db"});
+                        if( err.response){
+
+                            if( err.response.status === 404 ){
+                                this.addNewUserToDatabase(user)
+                                return Promise.resolve({ success: true, data:"Successfully added new user to db"})
+                            } 
+                            return Promise.resolve({success: true, data:"Successfully added user to db"});
+                        }else{
+                            toast("Having trouble connecting to the server, please check your internet connection and try again.")
+                            console.error("Error connecting to the backend server")
+                        }
                     }
                 )
+        await this.getLikedShops(user.userId);
+        await this.getDislikedShops(user.userId);
+
         return result;
     }
 
     //Does as the name suggests
-    //It also triggers the initializeUserProfile after trying to add the user to the db
+    //It also triggers the initializeApplicationState after trying to add the user to the db
     async addNewUserToDatabase(user){
         return AxiosClient().post("/users", {
             userId: user.userId,
@@ -167,14 +172,14 @@ export class DashboardContainer extends Component {
                 if( !result.success){
                     return Promise.reject(result.message)
                 }
-                this.initializeUserProfile(user.userId);
+                this.initializeApplicationState();
                 return result;
             }
         )
         .catch(
             err => {
                 console.error("Failed to add new user to db : ", err) 
-                this.initializeUserProfile()
+                this.initializeApplicationState()
             }
         )
         
@@ -193,21 +198,26 @@ export class DashboardContainer extends Component {
         }
         
         //Get the location of the user using the browser's navigator.location object.
-        //await this.getLocation();
+        await this.getLocation();
         const { lat, lng } = this.state.location;
+        const { getProfile } = authClient;
         //Get the nearby shops from the backend by using the shop type and the coordinates of the user
         //Once fetched and filtered to omit the liked/disliked shops, the shops will be stored in the state
-        await AxiosClient().get("/shops?shopType="+ this.state.shopType + "&lat=" + lat + "&lng=" + lng +"&userId=" + this.state.user.userId, {timeout: 8000})
+        await AxiosClient().get("/shops?shopType="+ this.state.shopType + "&lat=" + lat + "&lng=" + lng +"&userId=" + getProfile().sub, {timeout: 8000})
             .then( response => response.data.data)
             .then( shops => {
-                console.log("SHOOOOOOOOOOOOOOOOOOOOOOOOPSSS :::: ", shops)
                 const nearbyShops = shops.filter(
                     shop => {
                         return !shopsToOmit.includes(shop.shopId)
                     }
                 )
                 this.setState({ nearbyShops: nearbyShops})
-            })
+            }).catch(
+                err => {
+                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
+                    console.error("Error while getting shops:", err)
+                }
+            )
     }
 
     //Get the photos of the shops 
@@ -222,8 +232,21 @@ export class DashboardContainer extends Component {
                 result => {
                     shop.photo.contentType = result.data.contentType;
                     shop.photo.data = result.data.data;
-                    
+                    this.setState({nearbyShopsFullyLoaded : true})
                     return shop;
+                }
+            ).catch(
+                async err => {
+                    toast("Error while fetching photos, trying again ...")
+                    console.error("Error while fetching photos: ", err)
+                    await AxiosClient().get("/photos/" + shop.photoRef ).then(
+                        result => {
+                            shop.photo.contentType = result.data.contentType;
+                            shop.photo.data = result.data.data;
+                            this.setState({nearbyShopsFullyLoaded : true})
+                            return shop;
+                        }
+                    )
                 }
             )
             
@@ -238,29 +261,74 @@ export class DashboardContainer extends Component {
 
         
     }
+    async getLikedShopsIds(userId){
 
+        return await AxiosClient().get("/users/" + userId + "/likedShopsIds")
+            .then( response => response.data )
+            .then( likedShopsIds =>{
+                if(likedShopsIds && likedShopsIds.length !== 0 ){
+                    this.setState({ userDislikedShopsIds: likedShopsIds })
+                }
+                return likedShopsIds;
+            }).catch(
+                err => {
+                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
+                    console.error("Error while fetching likedshopsIds : ", err)
+                }
+            )
+    }
+
+    async getDislikedShopsIds(userId){
+
+        return await AxiosClient().get("/users/" + userId + "/dislikedShopsIds")
+            .then( response => response.data )
+            .then( dislikedShopsIds =>{
+                if(dislikedShopsIds && dislikedShopsIds.length !== 0 ){
+                    this.setState({ userDislikedShopsIds: dislikedShopsIds })
+                }
+                return dislikedShopsIds;
+            }).catch(
+                err => {
+                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
+                    console.error("Error while fetching dislikedshopsIds : ", err)
+                }
+            )
+    }
     //Gets the liked shops of the user from the backend using their userId
     //then saves them in the state 
     async getLikedShops(userId){
-        return await AxiosClient().get("/users/" + userId + "/likedShops")
-            .then( response => response.data)
-            .then( likedShops => {
-                if( likedShops && likedShops.length !== 0 ){
-                    this.setState({userLikedShops: likedShops})
-                }
-                return likedShops;
-            })
+
+        await this.getLikedShopsIds(userId)
+        const likedShopsIds = this.state.userLikedShopsIds;
+        let likedShops = [];
+
+        for (let likedShopId of likedShopsIds) {
+            const temp = await AxiosClient().get("/likedShops/" + likedShopId )
+                .then( response => response.data)
+            likedShops.push(temp);
+        }
+        this.setState({ userLikedShops: likedShops })
+        return likedShops;
     }
 
     //Gets the disliked shops of the user from the backend using their userId
     //then saves them in the state
     async getDislikedShops(userId){
-        return await AxiosClient().get("/users/" + userId + "/dislikedShops")
+
+        await this.getDislikedShopsIds(userId);
+        const dislikedShopsIds = this.state.userDislikedShopsIds;
+        let dislikedShops = [];
+
+        for( let dislikedShopId of dislikedShopsIds){
+            const temp = await AxiosClient().get("/dislikedShops/" + dislikedShopId)
             .then(response => response.data)
-            .then(dislikedShops => {
-                this.setState({ userDislikedShops : dislikedShops })
-                return dislikedShops
-            })
+
+            dislikedShops.push(temp);
+        }
+
+        this.setState({ userDislikedShops: dislikedShops })
+
+        return dislikedShops;
     }
 
     //Adds a shop to the likedShops of a user using their userId and the shopId of the shop to add to favorites
@@ -277,13 +345,13 @@ export class DashboardContainer extends Component {
         return !alreadyInLikedShops && await AxiosClient().put(url, { shopId : likedShop.shopId })
 
             .then( (result) => {
-                console.log("RESULTTTTTTTTTTTTTTTTTTTTTtttt ::::: ", result)
                 let newLikedShopsList = this.state.userLikedShops;
                 newLikedShopsList.push(likedShop)
                 this.setState({ userLikedShops: newLikedShopsList })
                 return result;
             }).catch(
                 err => {
+                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
                     console.error("Error adding shop to liked shops db: ", err)
                     return false;
                 }
@@ -314,7 +382,12 @@ export class DashboardContainer extends Component {
                         }
                     }
                 )
-            })
+            }).catch(
+                err => {
+                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
+                    console.error("Error while adding shop to disliked shops: ", err)
+                }
+            )
     }
 
     //Deletes a shop from the likedShops list in the state then proceeds to delete it from the db as well
@@ -327,69 +400,67 @@ export class DashboardContainer extends Component {
                 let newLikedShopsList = this.state.userLikedShops;
                 newLikedShopsList.pop(shop);
                 this.setState({ userLikedShops: newLikedShopsList})
-            })
+            }).catch(
+                err => {
+                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
+                    console.error("Error while deleting shop from liked shops : ", err)
+                }
+            )
     }
 
+    render() {   
 
-    async componentWillMount(){
-
-        await this.initializeUserProfile()
-
-    }
-
-    render() {    
         return (
             <div>
 
                 <NewNavbar></NewNavbar>
                 
                 <Route exact path='/callback' component={Callback}/>   
-
-                <SecuredRoute path="/" exact render={
-                        (props) => {
-                            return (
-                                <Route path ="/nearbyShops" render={ (props)=>{
-                                            return (<NearbyShops { ... this.props } 
+                <Route path="/" exact component={Welcome}></Route>
+                <SecuredRoute path="/nearbyShops" exact render={ (props)=>{
+                    
+                                            return (<NearbyShops { ... props } 
                                                     shops={this.state.nearbyShops}
+                                                    initializeApplicationState={this.initializeApplicationState}
                                                     like={this.handleAddingUserLikedShop} 
-                                                    dislike={this.state.handleAddingUserDislikedShop}
+                                                    dislike={this.handleAddingUserDislikedShop}
                                                     getShops={this.getShops}
                                                     getShopsPhotos ={this.getShopsPhotos} 
+                                                    nearbyShopsFullyLoaded={this.state.nearbyShopsFullyLoaded}
                                                 /> 
                                             )
                                         } 
-                                    }
-                                />
-                            )
-                        }
-
-                    } 
-                    
-                    checkingSession={this.state.checkingSession} 
-                />
-
-                <SecuredRoute path="/" exact render={
-                        (props) => {
-                            return (
-                                <Route path ="/likedShops" render={ 
-                                            (props)=><LikedShops {...props} 
-                                            shops={this.state.userLikedShops} 
-                                            userId={this.state.user.userId}
-                                            dislike={this.handleRemovingUserLikedShop}
-                                            getLikedShops={this.getLikedShops}
-                                            getShopsPhotos={this.getShopsPhotos} 
-                                        />
                                     } 
-                                />
-                            )
-                        }
-
-                    } 
                     
-                    checkingSession={this.state.checkingSession} 
+                    checkingSession={this.props.checkingSession} 
                 />
-                
+
+                <SecuredRoute path="/likedShops" exact render={ 
+                                        (props)=>{
+
+                                            return (<LikedShops {...props} 
+                                                initializeApplicationState={this.initializeApplicationState}
+                                                shops={this.state.userLikedShops} 
+                                                userId={this.state.user.userId}
+                                                dislike={this.handleRemovingUserLikedShop}
+                                                getLikedShops={this.getLikedShops}
+                                                getShopsPhotos={this.getShopsPhotos} 
+                                                likedShopsFullyLoaded={this.state.likedShopsFullyLoaded}
+                                            />
+                                            )
+                                        }
+                                    }
+                    
+                    checkingSession={this.props.checkingSession} 
+                />
+
+                {/* this is the container of the popup messages I will use for error and notifications */}
+                <ToastContainer progressStyle={{background: "red"}} position={toast.POSITION.BOTTOM_RIGHT}/>
+            
             </div>
         )
     }
 }
+
+
+export default DashboardContainer

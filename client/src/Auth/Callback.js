@@ -1,6 +1,7 @@
-import React, {Component} from 'react';
-import {withRouter} from 'react-router-dom';
-import authClient from './Auth';
+import React, {Component} from 'react'
+import {withRouter} from 'react-router-dom'
+import authClient from './Auth'
+import Loader from 'react-loader-spinner'
 
 class Callback extends Component {
   async componentDidMount() {
@@ -10,7 +11,15 @@ class Callback extends Component {
 
   render() {
     return (
-      <p>Loading profile...</p>
+      <div style={{textAlign: "center", marginTop: "20%"}}>
+        <Loader
+          type="Grid"
+          color="#EB3349"
+          height="100"	
+          width="100"
+        />
+      </div>
+      
     );
   }
 }

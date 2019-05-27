@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 
 const CustomLink = props => {
     const CustomLinkStyle = {
-      textDecoration: "none"
+      textDecoration: "none",
+      color: "#EB3349"
     };
     return <Link {...props} style={CustomLinkStyle} />;
   };

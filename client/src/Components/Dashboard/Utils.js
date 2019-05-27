@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { BACKEND_URL } from '../configs';
-import authClient from './Auth';
+import { BACKEND_URL } from '../../configs';
+import authClient from '../../Auth/Auth';
 
 export function AxiosClient(){
   return  axios.create(
