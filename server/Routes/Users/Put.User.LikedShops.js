@@ -1,4 +1,4 @@
-const { checkSuccess } = require('../../utils')
+const { checkSuccess } = require('../../Utils')
 const Models = require('../../Models/Models')
 
 function PutUserLikedShops(req, res){

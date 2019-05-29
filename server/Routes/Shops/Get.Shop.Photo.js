@@ -4,7 +4,7 @@ require('dotenv').config()
 function GetShopPhoto(req,res){
     const options = {
       method: "GET",
-      url: "https://maps.googleapis.com/maps/api/place/photo",
+      url: process.env.API_PLACES_PHOTOS_BASE_ADDRESS,
       qs: {
         maxwidth: 200,
         photoreference: req.params.id,

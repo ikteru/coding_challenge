@@ -1,15 +1,25 @@
 import auth0 from 'auth0-js';
+import {
+  AUTH0_DOMAIN, 
+  AUTH0_AUDIENCE, 
+  AUTH0_CLIENT_ID,
+  AUTH0_REDIRECT_URI,
+  AUTH0_RESPONSE_TYPE,
+  AUTH0_SCOPE   
+} from '../configs';
 
+
+//This is where I initialize the Auth0 
 class Auth {
   constructor() {
     this.auth0 = new auth0.WebAuth({
       // the following three lines MUST be updated
-      domain: 'ikteru.auth0.com',
-      audience: 'https://ikteru.auth0.com/userinfo',
-      clientID: 'Mjwf9Ii0u8jexj8HFuKjgv0LbXnSMqYm',
-      redirectUri: 'http://localhost:3000/callback',
-      responseType: 'id_token',
-      scope: 'openid profile'
+      domain: AUTH0_DOMAIN,
+      audience: AUTH0_AUDIENCE,
+      clientID: AUTH0_CLIENT_ID,
+      redirectUri: AUTH0_REDIRECT_URI,
+      responseType: AUTH0_RESPONSE_TYPE,
+      scope: AUTH0_SCOPE
     });
 
     this.getProfile = this.getProfile.bind(this);
@@ -58,8 +68,8 @@ class Auth {
 
   signOut() {
     this.auth0.logout({
-      returnTo: 'http://localhost:3000',
-      clientID: 'Mjwf9Ii0u8jexj8HFuKjgv0LbXnSMqYm',
+      returnTo: "http://localhost:3000",
+      clientID: AUTH0_CLIENT_ID,
     });
   }
 

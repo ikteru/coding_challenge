@@ -4,9 +4,8 @@ import { withRouter } from 'react-router-dom';
 import DashboardContainer from './Components/Dashboard/DashboardContainer';
 import authClient from './Auth/Auth';
 
-import { transitions, positions, Provider as AlertProvider } from 'react-alert'
-import AlertTemplate from 'react-alert-template-basic'
-
+//This component is the entry to the application
+//it takes care of the authentication 
 class App extends React.Component {
   constructor(props){
     super(props);
@@ -36,13 +35,7 @@ class App extends React.Component {
 
   render(){
 
-    // Alert provider configurations
-    const options = {
-      position: positions.BOTTOM_CENTER,
-      timeout: 5000,
-      offset: '30px',
-      transition: transitions.SCALE
-    }
+
 
     //Get the user profile from Auth0 and construct a simple user object
     const { getProfile } = authClient;
@@ -61,14 +54,11 @@ class App extends React.Component {
 
     return (
         <div>
-          <AlertProvider template={AlertTemplate} {...options}>
             <DashboardContainer 
               checkingSession={this.state.checkingSession}
               user={user}
               {...this.props}
-            />
-          </AlertProvider>
-        
+            />        
         </div>
 
     );

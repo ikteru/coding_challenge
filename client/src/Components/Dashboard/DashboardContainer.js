@@ -1,21 +1,22 @@
 import React, { Component } from 'react'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { Route } from 'react-router-dom'
+
 import authClient from '../../Auth/Auth'
 import { AxiosClient, getCurrentPosition} from './Utils'
+
+import Callback from '../Callback/Callback'
+import SecuredRoute from './SecuredRoute'
 import NearbyShops from '../../routes/NearbyShops'
 import LikedShops from '../../routes/LikedShops'
 import NewNavbar from '../Navbar/NavBar'
-import { Route } from 'react-router-dom'
-import SecuredRoute from './SecuredRoute'
-import Callback from '../../Auth/Callback'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import Welcome from '../welcome/Welcome'
+import Welcome from '../Welcome/Welcome'
 
 
 //This Component is user as a container to contain the state of the app
 //It doesn't contain any UI whatsover, it's only mission is to manage the state of the app
 //and load relevant components depending on the state
-
 
 class DashboardContainer extends Component {
     constructor(props){
@@ -26,15 +27,27 @@ class DashboardContainer extends Component {
                 lat: -33.8670522,
                 lng: 151.1957362
             },
+            //Can be used to get particular types of shops (restaurant, store, clothing_store ...)
             shopType:"clothing_store",
-            currentRoute: this.props.location && this.props.location.pathname,
+            //Stores the nearbyShops fetched from the server
             nearbyShops:[],
+            //stores the user's favorite shops
             userLikedShops:[],
+            //stores the user's disliked shops
             userDislikedShops: [],
+            //stores the user's liked shops ids
+            //The ids are used to fetch each shop from the server and it's photos as well
+            //They're also used to check what shops to display and which not to 
+            //Same thing for dislikedshopsIds
             userLikedShopsIds: [],
             userDislikedShopsIds:[],
+            //Used to check if the shops data is loaded from the server to avoid making the requests
+            //each time one of the child components is rendered
             nearbyShopsFullyLoaded: false,
-            likedShopsFullyLoaded: false
+            likedShopsFullyLoaded: false,
+            //To avoid asking the server too many times for the user information
+            numberOfTries: 0
+
         }
 
         this.handleAddingUserDislikedShop = this.handleAddingUserDislikedShop.bind(this);
@@ -134,14 +147,16 @@ class DashboardContainer extends Component {
                     let userData = response.data
                     this.setState({ userLikedShopsIds : userData.likedShopsIds})
                     this.setState({ userDislikedShopsIds : userData.dislikedShopsIds })
+                    this.setState({ numberOfTries: this.state.numberOfTries++ })
                     return response;
                 })
                 .catch(
                     err => {
                         if( err.response){
 
-                            if( err.response.status === 404 ){
+                            if( err.response.status === 404 && this.state.numberOfTries < 4 ){
                                 this.addNewUserToDatabase(user)
+                                this.setState({ numberOfTries: this.state.numberOfTries++ })
                                 return Promise.resolve({ success: true, data:"Successfully added new user to db"})
                             } 
                             return Promise.resolve({success: true, data:"Successfully added user to db"});
@@ -232,7 +247,7 @@ class DashboardContainer extends Component {
                 console.log("Shop with shopId: "+ shop.shopId + " and shop name: " + shop.n)
             }else{
                 
-                await AxiosClient().get("/photos/" + shop.photoRef ).then(
+                await AxiosClient().get("/shops/photos/" + shop.photoRef ).then(
                     result => {
                         shop.photo.contentType = result.data.contentType;
                         shop.photo.data = result.data.data;
@@ -251,7 +266,7 @@ class DashboardContainer extends Component {
                     async err => {
                         toast("Error while fetching photos, trying again ...")
                         console.error("Error while fetching photos: ", err)
-                        await AxiosClient().get("/photos/" + shop.photoRef ).then(
+                        await AxiosClient().get("/shops/photos/" + shop.photoRef ).then(
                             result => {
                                 shop.photo.contentType = result.data.contentType;
                                 shop.photo.data = result.data.data;
@@ -274,6 +289,8 @@ class DashboardContainer extends Component {
 
         
     }
+    
+    //Get the likedShops Ids for a particular user ..
     async getLikedShopsIds(userId){
 
         return await AxiosClient().get("/users/" + userId + "/likedShopsIds")
@@ -316,7 +333,7 @@ class DashboardContainer extends Component {
         let likedShops = [];
 
         for (let likedShopId of likedShopsIds) {
-            const temp = await AxiosClient().get("/likedShops/" + likedShopId )
+            const temp = await AxiosClient().get("/shops/likedshops/" + likedShopId )
                 .then( response => response.data)
             likedShops.push(temp);
         }
@@ -333,7 +350,7 @@ class DashboardContainer extends Component {
         let dislikedShops = [];
 
         for( let dislikedShopId of dislikedShopsIds){
-            const temp = await AxiosClient().get("/dislikedShops/" + dislikedShopId)
+            const temp = await AxiosClient().get("/shops/dislikedShops/" + dislikedShopId)
             .then(response => response.data)
 
             dislikedShops.push(temp);

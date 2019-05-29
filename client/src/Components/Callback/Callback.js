@@ -1,6 +1,6 @@
 import React, {Component} from 'react'
 import {withRouter} from 'react-router-dom'
-import authClient from './Auth'
+import authClient from '../../Auth/Auth'
 import Loader from 'react-loader-spinner'
 
 class Callback extends Component {

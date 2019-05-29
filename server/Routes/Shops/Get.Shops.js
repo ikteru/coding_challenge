@@ -1,12 +1,12 @@
 const requestPromise = require('request-promise')
-const { checkSuccess, synthesizeShops } = require('../../utils')
+const { checkSuccess, synthesizeShops } = require('../../Utils')
 require('dotenv').config()
 
 async function GetShops(req,res){
     const { lat, lng, userId } = req.query;
     const options = {
       method: "GET",
-      url: "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
+      url: process.env.API_PLACES_BASE_ADDRESS,
       qs: {
         location: `${lat}, ${lng}`,
         //location: "33.995521, -6.8500229,16",
