@@ -214,8 +214,9 @@ class DashboardContainer extends Component {
                 this.setState({ nearbyShops: nearbyShops})
             }).catch(
                 err => {
-                    toast("Having trouble connecting to the server, please check your internet connection and try again.")
-                    console.error("Error while getting shops:", err)
+                    toast("No shops found nearby.")
+                    console.log("No shops found nearby: ", err)
+
                 }
             )
     }
@@ -227,28 +228,40 @@ class DashboardContainer extends Component {
         let shopsWithPhotos = [];
         let counter = 0;
         for ( let shop of shops ){
-            
-            await AxiosClient().get("/photos/" + shop.photoRef ).then(
-                result => {
-                    shop.photo.contentType = result.data.contentType;
-                    shop.photo.data = result.data.data;
-                    this.setState({nearbyShopsFullyLoaded : true})
-                    return shop;
-                }
-            ).catch(
-                async err => {
-                    toast("Error while fetching photos, trying again ...")
-                    console.error("Error while fetching photos: ", err)
-                    await AxiosClient().get("/photos/" + shop.photoRef ).then(
-                        result => {
-                            shop.photo.contentType = result.data.contentType;
-                            shop.photo.data = result.data.data;
+            if( shop.photoRef.length === 0 ){
+                console.log("Shop with shopId: "+ shop.shopId + " and shop name: " + shop.n)
+            }else{
+                
+                await AxiosClient().get("/photos/" + shop.photoRef ).then(
+                    result => {
+                        shop.photo.contentType = result.data.contentType;
+                        shop.photo.data = result.data.data;
+                        
+                        if( shopsType === "nearbyShops" ){
                             this.setState({nearbyShopsFullyLoaded : true})
-                            return shop;
-                        }
-                    )
-                }
-            )
+                        } else if(shopsType === "userLikedShops") {
+                            this.setState({ likedShopsFullyLoaded : true })
+                        } else {
+                            console.error("Wrong shopsType provided")
+                        }                    
+                        
+                        return shop;
+                    }
+                ).catch(
+                    async err => {
+                        toast("Error while fetching photos, trying again ...")
+                        console.error("Error while fetching photos: ", err)
+                        await AxiosClient().get("/photos/" + shop.photoRef ).then(
+                            result => {
+                                shop.photo.contentType = result.data.contentType;
+                                shop.photo.data = result.data.data;
+                                this.setState({nearbyShopsFullyLoaded : true})
+                                return shop;
+                            }
+                        )
+                    }
+                )
+            }
             
             shopsWithPhotos.push(shop)
             counter++;
@@ -396,9 +409,9 @@ class DashboardContainer extends Component {
 
         return await AxiosClient().delete(url,{ shopId: deletedShop.shopId })
             .then( response => response.data)
-            .then( shop => {
-                let newLikedShopsList = this.state.userLikedShops;
-                newLikedShopsList.pop(shop);
+            .then( shopToDelete => {
+                let oldLikedShopsList = this.state.userLikedShops;
+                let newLikedShopsList = oldLikedShopsList.filter( shop => shop.shopId !== shopToDelete.shopId );
                 this.setState({ userLikedShops: newLikedShopsList})
             }).catch(
                 err => {

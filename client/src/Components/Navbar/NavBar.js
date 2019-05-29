@@ -16,6 +16,8 @@ import FaceIcon from '@material-ui/icons/Face';
 //Authentication dependency
 import authClient from "../../Auth/Auth";
 
+import { withRouter } from 'react-router-dom';
+
 const styles = theme => ({
 
   grow: {
@@ -72,7 +74,6 @@ class NavBar extends React.Component {
 
 
   render(){
-
     const { isAuthenticated, getProfile, signIn } = authClient;
     const { classes } = this.props;
     const isMobileMenuOpen = Boolean(this.state.mobileMoreAnchorEl);
@@ -177,4 +178,4 @@ class NavBar extends React.Component {
   }
 }
 
-export default withStyles(styles)(NavBar);
+export default withRouter(withStyles(styles)(NavBar));

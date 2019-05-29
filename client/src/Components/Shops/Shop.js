@@ -5,11 +5,11 @@ import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardMedia from '@material-ui/core/CardMedia';
 import CardActions from '@material-ui/core/CardActions';
-import IconButton from '@material-ui/core/IconButton';
 import LikeIcon from './LikeIcon'
 import DislikeIcon from './DislikeIcon'
 import Loader from 'react-loader-spinner'
 import Button from '@material-ui/core/Button';
+import NoImage from '../../assets/no-image.png';
 
 
 const styles = theme => ({
@@ -76,7 +76,7 @@ class RecipeReviewCard extends React.Component {
           )
         }
         {
-          !shop.photo.data && <div style={{textAlign: "center", paddingTop: "45%", height: 300}}>
+          !shop.photo.data && shop.photoRef.length !== 0 && <div style={{textAlign: "center", paddingTop: "45%", height: 300}}>
           <Loader
             type="Grid"
             color="#EB3349"
@@ -84,6 +84,11 @@ class RecipeReviewCard extends React.Component {
             width="30"
           />
         </div>
+        }
+        {
+          shop.photoRef.length === 0 && ( <div style={{textAlign: "center", paddingTop: "45%", height: 300}}>
+            <img src={NoImage} alt="no-img-found" height={40} width={40}/>
+          </div>)
         }
 
         <CardActions className={classes.actions} >

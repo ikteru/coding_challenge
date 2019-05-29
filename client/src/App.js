@@ -61,13 +61,11 @@ class App extends React.Component {
 
     return (
         <div>
-
-          {/* <Route path="/" render={ ()=> <DashboardContainer authClient={authClient} /> } /> */}
-          {/* <SecuredRoute path="/" exact render={(props) => <DashboardContainer {...props} />} checkingSession={this.state.checkingSession} /> */}
           <AlertProvider template={AlertTemplate} {...options}>
             <DashboardContainer 
               checkingSession={this.state.checkingSession}
               user={user}
+              {...this.props}
             />
           </AlertProvider>
         

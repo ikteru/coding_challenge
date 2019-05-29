@@ -1,7 +1,5 @@
 const requestPromise = require("request-promise");
-const request = require("request");
-const Models = require("./models/models");
-const uniqid = require("uniqid");
+const Models = require("./Models/Models");
 
 function checkSuccess(Promise) {
   return Promise.then(result => ({ success: true, data: result })).catch(
@@ -11,18 +9,10 @@ function checkSuccess(Promise) {
 
 //Gets shops from google maps places api (nearby places andpoint) and synthesizes the data for to be ready to be stored
 async function synthesizeShops(result) {
-  console.log(
-    " ======================================================================================= "
-  );
-  console.log("SYNTHESIZED SHOPS RESULT :::: ");
-  console.log(result.data.results);
-  console.log(
-    " ======================================================================================= "
-  );
+
   if (result.success) {
     let googlePlaces = result.data.results;
     if (googlePlaces.length === 0) {
-      console.log("EMPTYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
       return Promise.reject("No shop found nearby ... ");
     } else {
       console.log("Successfully retrieved data from google places api ... ");
@@ -52,14 +42,6 @@ async function synthesizeShops(result) {
 //requestPromises photos from google maps places api (photos endpoint) using photo references from the response
 //that we get from the nearby places api requestPromise then saves the final shop data to the db
 async function getShopsPhotos(result) {
-  console.log(
-    " ======================================================================================= "
-  );
-  console.log("GET SHOP PHOTOS RESULT :::: ");
-  console.log(result);
-  console.log(
-    " ======================================================================================= "
-  );
 
   if (result.success) {
     let places = result.data;
