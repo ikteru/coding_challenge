@@ -57,7 +57,8 @@ class DashboardContainer extends Component {
         this.handleRemovingUserLikedShop = this.handleRemovingUserLikedShop.bind(this);
         this.getLocation = this.getLocation.bind(this);
         this.getLikedShops = this.getLikedShops.bind(this);
-        this.getDislikedShops = this.getDislikedShops.bind(this);
+        // If we ever decide to display dislikedshops as well
+        // this.getDislikedShops = this.getDislikedShops.bind(this);
         this.getShopsPhotos = this.getShopsPhotos.bind(this);
         this.getShops = this.getShops.bind(this);
         this.initializeApplicationState = this.initializeApplicationState.bind(this)
@@ -139,6 +140,9 @@ class DashboardContainer extends Component {
 
         const { user } = this.props;
 
+        //Get the location of the user using the browser's navigator.location object.
+        await this.getLocation();
+
         //Check if user is stored in the db and add the user to the db in case they're not registered
         //initializeApplicationState is also triggered inside addNewUserToDatabase in order to reinitialize the profile
         //after adding the user to the db
@@ -166,8 +170,8 @@ class DashboardContainer extends Component {
                         }
                     }
                 )
-        await this.getLikedShops(user.userId);
-        await this.getDislikedShops(user.userId);
+        // await this.getLikedShopsIds(user.userId);
+        // await this.getDislikedShopsIds(user.userId);
 
         return result;
     }
@@ -211,14 +215,11 @@ class DashboardContainer extends Component {
         if( this.state.userDislikedShopsIds || this.state.userDislikedShopsIds ){
             shopsToOmit = this.state.userLikedShopsIds.concat(this.state.userDislikedShopsIds)
         }
-        
-        //Get the location of the user using the browser's navigator.location object.
-        await this.getLocation();
+
         const { lat, lng } = this.state.location;
-        const { getProfile } = authClient;
         //Get the nearby shops from the backend by using the shop type and the coordinates of the user
         //Once fetched and filtered to omit the liked/disliked shops, the shops will be stored in the state
-        await AxiosClient().get("/shops?shopType="+ this.state.shopType + "&lat=" + lat + "&lng=" + lng +"&userId=" + getProfile().sub, {timeout: 8000})
+        await AxiosClient().get("/shops?shopType="+ this.state.shopType + "&lat=" + lat + "&lng=" + lng , {timeout: 8000})
             .then( response => response.data.data)
             .then( shops => {
                 const nearbyShops = shops.filter(
@@ -244,7 +245,7 @@ class DashboardContainer extends Component {
         let counter = 0;
         for ( let shop of shops ){
             if( shop.photoRef.length === 0 ){
-                console.log("Shop with shopId: "+ shop.shopId + " and shop name: " + shop.n)
+                console.log("Shop with shopId: "+ shop.shopId + " and shop name: " + shop.name)
             }else{
                 
                 await AxiosClient().get("/shops/photos/" + shop.photoRef ).then(
@@ -253,7 +254,7 @@ class DashboardContainer extends Component {
                         shop.photo.data = result.data.data;
                         
                         if( shopsType === "nearbyShops" ){
-                            this.setState({nearbyShopsFullyLoaded : true})
+                            this.setState({ nearbyShopsFullyLoaded : true})
                         } else if(shopsType === "userLikedShops") {
                             this.setState({ likedShopsFullyLoaded : true })
                         } else {
@@ -270,7 +271,7 @@ class DashboardContainer extends Component {
                             result => {
                                 shop.photo.contentType = result.data.contentType;
                                 shop.photo.data = result.data.data;
-                                this.setState({nearbyShopsFullyLoaded : true})
+                                this.setState({ nearbyShopsFullyLoaded : true})
                                 return shop;
                             }
                         )
@@ -333,7 +334,11 @@ class DashboardContainer extends Component {
         let likedShops = [];
 
         for (let likedShopId of likedShopsIds) {
-            const temp = await AxiosClient().get("/shops/likedshops/" + likedShopId )
+            const temp = await AxiosClient().get(
+                    "/shops/likedshops/" + likedShopId 
+                    +"?lat=" + this.state.location.lat 
+                    + "&lng=" + this.state.location.lng
+                )
                 .then( response => response.data)
             likedShops.push(temp);
         }
@@ -341,25 +346,26 @@ class DashboardContainer extends Component {
         return likedShops;
     }
 
+    //If we ever decide to display disliked shops as well
     //Gets the disliked shops of the user from the backend using their userId
     //then saves them in the state
-    async getDislikedShops(userId){
+    // async getDislikedShops(userId){
 
-        await this.getDislikedShopsIds(userId);
-        const dislikedShopsIds = this.state.userDislikedShopsIds;
-        let dislikedShops = [];
+    //     await this.getDislikedShopsIds(userId);
+    //     const dislikedShopsIds = this.state.userDislikedShopsIds;
+    //     let dislikedShops = [];
 
-        for( let dislikedShopId of dislikedShopsIds){
-            const temp = await AxiosClient().get("/shops/dislikedShops/" + dislikedShopId)
-            .then(response => response.data)
+    //     for( let dislikedShopId of dislikedShopsIds){
+    //         const temp = await AxiosClient().get("/shops/dislikedShops/" + dislikedShopId)
+    //         .then(response => response.data)
 
-            dislikedShops.push(temp);
-        }
+    //         dislikedShops.push(temp);
+    //     }
 
-        this.setState({ userDislikedShops: dislikedShops })
+    //     this.setState({ userDislikedShops: dislikedShops })
 
-        return dislikedShops;
-    }
+    //     return dislikedShops;
+    // }
 
     //Adds a shop to the likedShops of a user using their userId and the shopId of the shop to add to favorites
     //It first adds the shops to the state then proceeds to save the shop to the database using an HTTP PUT request
@@ -391,7 +397,7 @@ class DashboardContainer extends Component {
     //Adds a shop to the dislikedShops of a user using their userId and the shopId of the shop to add to dislikedshops
     //It first adds the shops to the state then proceeds to save the shop to the database using an HTTP PUT request
     async addToDislikedShops(userId, dislikedshop){
-        let url = "/users/" + userId + "/dislikedShops"
+        let url = "/users/" + userId + "/dislikedShops/" + dislikedshop.shopId;
         let alreadyInDislikedShops = false;
 
         this.state.userLikedShops.forEach( shop => {
@@ -399,7 +405,7 @@ class DashboardContainer extends Component {
                 alreadyInDislikedShops = true
             }
         })
-        return !alreadyInDislikedShops && await AxiosClient().put(url, { shopId: dislikedshop.shopId })
+        return !alreadyInDislikedShops && await AxiosClient().put(url)
             .then( () => {
                 let newDislikedShopsList = this.state.userDislikedShops;
                 newDislikedShopsList.push(dislikedshop);
@@ -422,13 +428,12 @@ class DashboardContainer extends Component {
 
     //Deletes a shop from the likedShops list in the state then proceeds to delete it from the db as well
     async DeleteFromLikedShops(userId, deletedShop ){
-        let url = "/users/" + userId + "/likedShops";
-
-        return await AxiosClient().delete(url,{ shopId: deletedShop.shopId })
+        let url = "/users/" + userId + "/likedShops/" + deletedShop.shopId ;
+        return await AxiosClient().delete(url)
             .then( response => response.data)
-            .then( shopToDelete => {
+            .then( () => {
                 let oldLikedShopsList = this.state.userLikedShops;
-                let newLikedShopsList = oldLikedShopsList.filter( shop => shop.shopId !== shopToDelete.shopId );
+                let newLikedShopsList = oldLikedShopsList.filter( shop => shop.shopId !== deletedShop.shopId );
                 this.setState({ userLikedShops: newLikedShopsList})
             }).catch(
                 err => {

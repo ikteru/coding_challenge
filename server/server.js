@@ -10,7 +10,7 @@ const mongoose = require("mongoose");
 const jwt = require("express-jwt");
 const jwksRsa = require("jwks-rsa");
 //Routers 
-const { usersRouter, shopsRouter } = require('./Routes')
+const { usersRouter, shopsRouter } = require('./Routers/Routers')
 
 //Environment variables
 require("dotenv").config();
@@ -49,7 +49,7 @@ app.use(cors());
 app.use(morgan("combined"));
 
 //Check and validate jwt
-app.use(checkJwt);
+//app.use(checkJwt);
 
 //Catch jwt validation error
 app.use(function(err, req, res, next) {

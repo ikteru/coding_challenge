@@ -2,6 +2,7 @@ const { checkSuccess } = require('../../Utils')
 const Models = require('../../Models/Models')
 
 function PostUsers (req,res){
+  if( req.body ){
     const newUser = {
       userId: req.body.userId,
       name: req.body.name,
@@ -20,6 +21,9 @@ function PostUsers (req,res){
         });
       }
     });
+  }else{
+    res.status(400).send()
+  }
   }
 
   module.exports = PostUsers 

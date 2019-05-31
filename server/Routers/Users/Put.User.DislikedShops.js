@@ -2,18 +2,20 @@ const { checkSuccess } = require('../../Utils')
 const Models = require('../../Models/Models')
 
 function PutUserDislikedShops(req,res){
-    checkSuccess(Models.UserModel.findOne({ userId: req.params.id }))
+  if( req.params.userId && req.params.shopId ){
+
+    checkSuccess(Models.UserModel.findOne({ userId: req.params.userId }))
       .then(result => {
         if (result.success) {
           let doc = result.data;
-          if (doc.dislikedShopsIds.indexOf(req.body.shopId) !== -1) {
+          if (doc.dislikedShopsIds.indexOf(req.params.shopId) !== -1) {
             res.status(400).send("Shop already disliked ... ");
             return checkSuccess(Promise.reject("Shop already disliked ..."));
           } else {
-            doc.dislikedShopsIds.push(req.body.shopId);
+            doc.dislikedShopsIds.push(req.params.shopId);
             
             //Remove dislikedshop from favoriteshopsIds
-            let temp = doc.likedShopsIds.filter( shopId => shopId !== req.body.shopId);
+            let temp = doc.likedShopsIds.filter( shopId => shopId !== req.params.shopId);
             doc.likedShopsIds = temp;
             
             doc.save();
@@ -32,6 +34,9 @@ function PutUserDislikedShops(req,res){
         return result;
       })
       .catch(err => console.error(err));
+  }else{
+    res.status(400).send()
+  }
   }
 
   module.exports = PutUserDislikedShops 

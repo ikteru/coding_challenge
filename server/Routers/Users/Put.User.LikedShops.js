@@ -2,6 +2,8 @@ const { checkSuccess } = require('../../Utils')
 const Models = require('../../Models/Models')
 
 function PutUserLikedShops(req, res){
+  if( req.params.userId && req.params.shopId ){
+
     checkSuccess(Models.UserModel.findOne({ userId: req.params.id }))
       .then(result => {
         if (!result.success) {
@@ -10,13 +12,13 @@ function PutUserLikedShops(req, res){
           res.status(404).send("Not found");
         } else {
           let doc = result.data;
-          if (doc.likedShopsIds.indexOf(req.body.shopId) !== -1) {
+          if (doc.likedShopsIds.indexOf(req.params.shopId) !== -1) {
             res.status(400).send("Shop already liked ... ");
             return checkSuccess(Promise.reject("Shop already liked ..."));
           } else {
-            doc.likedShopsIds.push(req.body.shopId);
+            doc.likedShopsIds.push(req.params.shopId);
             //Remove from dislikedshops ( no real need for this because the user can't see disliked shops so he can't like them)
-            let temp = doc.dislikedShopsIds.filter( shopId => shopId !== req.body.shopId);
+            let temp = doc.dislikedShopsIds.filter( shopId => shopId !== req.params.shopId);
             doc.dislikedShopsIds = temp;
             
             doc.save();
@@ -32,6 +34,9 @@ function PutUserLikedShops(req, res){
         }
       })
       .catch(err => console.error(err));
+  }else{
+    res.status(400).send()
+  }
   }
 
   module.exports = PutUserLikedShops 

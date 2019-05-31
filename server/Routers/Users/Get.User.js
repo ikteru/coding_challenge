@@ -2,7 +2,7 @@ const { checkSuccess } = require('../../Utils')
 const Models = require('../../Models/Models')
 
 function GetUser(req,res){
-    checkSuccess(Models.UserModel.findOne({ userId: req.params.id })).then(
+    checkSuccess(Models.UserModel.findOne({ userId: req.params.userId })).then(
       result => {
         if (result.success) {
           let user = result.data;

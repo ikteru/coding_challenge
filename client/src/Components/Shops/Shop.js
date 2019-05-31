@@ -45,10 +45,10 @@ class RecipeReviewCard extends React.Component {
         <CardHeader
           className={classes.header}
           avatar={
-            <img src={shop.icon} className={classes.avatar} />
+            <img src={shop.icon} alt={shop.name} className={classes.avatar} />
           }
           title={shop.name}
-          //subheader="some cool shop motto ! :p"
+          subheader={"Distance: " + shop.distance + " m"}
         />
         {
           shop.photo.data && (

@@ -3,23 +3,24 @@ const { checkSuccess, synthesizeShops } = require('../../Utils')
 require('dotenv').config()
 
 async function GetShops(req,res){
-    const { lat, lng, userId } = req.query;
+    const { lat, lng } = req.query;
     const options = {
       method: "GET",
       url: process.env.API_PLACES_BASE_ADDRESS,
       qs: {
         location: `${lat}, ${lng}`,
         //location: "33.995521, -6.8500229,16",
-        radius: 1500,
-        //type: req.query.shopType,
-        type: "restaurant" ,
+        //radius: 1500,
+        rankby: "distance" ,
+        type: req.query.shopType,
+        //type: "restaurant" ,
         key: process.env.API_KEY
       },
       json: true
     };
   
     let googlePlacesApiResponse = await checkSuccess(requestPromise(options));
-    let synthesizedShopsList = await checkSuccess(synthesizeShops(googlePlacesApiResponse));
+    let synthesizedShopsList = await checkSuccess(synthesizeShops(googlePlacesApiResponse, lat, lng ));
     if(synthesizedShopsList.success){
       res.send(synthesizedShopsList)
     }else{

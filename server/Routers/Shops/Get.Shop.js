@@ -1,7 +1,7 @@
 const { checkSuccess, getShopDetails } = require('../../Utils')
 
 async function GetShop(req,res){
-    const result = await checkSuccess(getShopDetails(req.params.shopId))
+    const result = await checkSuccess(getShopDetails(req.params.shopId, req.query.lat, req.query.lng))
     if(result.success){
       res.send(result.data)
     }else{
