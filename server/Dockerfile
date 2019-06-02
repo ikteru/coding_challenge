@@ -1,5 +1,5 @@
-# Use a lighter version of Node as a parent image
-FROM mhart/alpine-node:8.11.4
+# Use node:argon as a parent image
+FROM node:argon
 # Set the working directory to /server
 WORKDIR /server
 # copy package.json into the container at /server

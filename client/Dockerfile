@@ -1,6 +1,7 @@
-#Using a light nodejs version as a parent image
-FROM mhart/alpine-node:8.11.4
+#Using node argon as a parent image
+FROM node:argon
 #Set the working directory to /client
+RUN mkdir /client
 WORKDIR /client
 #Copy the package.json file into the /client directory
 COPY package*.json /client/
