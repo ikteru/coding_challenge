@@ -4,24 +4,29 @@ This project is a full-stack application with both the front-end and back-end AP
 The front-end is developed using Reactjs and the API is developed using Nodejs/express and a docker image of a Mongo database that wasn't secured for our purposes.
 The scenario is as follows:
 
-The user navigates to the application which is hosted on:
+1. The user navigates to the application which is hosted on:
 ```
 http://localhost:8080
 ```
-The user then gets greeted with a simple welcome screen and a Navbar as requested in the coding challenge.
+2. The user then gets greeted with a simple welcome screen and a Navbar as requested in the coding challenge.
 The Navbar has three links:
+
     - Nearby Shops
     - Liked/Favorite Shops
     - Login
-Since it's been requested the user logs in in order to use the application, both "Nearby Shops" and "Liked Shops" links are secure and therefore redirect the user to the login page if he is not authenticated.
+    
+3. Since it's been requested the user logs in in order to use the application, both "Nearby Shops" and "Liked Shops" links are secure and therefore redirect the user to the login page if he is not authenticated.
 
 The user can also Login or Register using the Login link.
+##Industry standards implemented:
 
 In order to implement secure Login, I chose to use an Identity Provider and therefore save myself the trouble of implementing my own identity solution which, no matter how secure it is, won't be as secure as a specialist's.
 
 I also chose to use an external identity provider in order to showcase my knowledge and proficiency in ``` OAuth 2.0 ``` and ``` Open Id Connect``` standards. 
 
 The identity provider I chose is: ```Auth0```
+
+There is no need to mention this because it's implied, but ```JWTs``` are used to implement Authentication & Authorization tokens.
 
 Once the user logs in using Auth0's universal login page, he redirected back to the welcome page with his email or name displayed on the top right corner with the option to Logout.
 
@@ -136,6 +141,9 @@ Some proposed new features :
 And a lot more features that this project is already structured in a way that makes it easier to add them.
 
 Improvements: 
+- Improve Error handeling both on the front-end and back-end. (There is some basic error handeling implemented, but it's far from perfect and doesn't take into consideration a few failure scenarios, which is why the next improvement suggestion is crucial)
+- Implement Unit Tests for each component in the React application.
+- Implement cleanup for the asynchronous requests used in the Container Components as the app doesn't do any cleanup in case the user decides to navigate to a different component while the current one is still doing an asynchronous task such as loading the shops. 
 - Rethink the database structure 
 - Rethink the REST API structure and build it in adherance to the Open API 3.0 specification
 - ....
