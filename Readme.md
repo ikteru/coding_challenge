@@ -1,3 +1,4 @@
+![alt text](http://i.imgur.com/fU4Q6bY.png)
 # Random.Shop :p 
 
 This project is a full-stack application with both the front-end and back-end API implemented.
