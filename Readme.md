@@ -19,7 +19,8 @@ The Navbar has three links:
 3. Since it's been requested the user logs in in order to use the application, both "Nearby Shops" and "Liked Shops" links are secure and therefore redirect the user to the login page if he is not authenticated.
 
 The user can also Login or Register using the Login link.
-##Industry standards implemented:
+
+## Industry standards implemented:
 
 In order to implement secure Login, I chose to use an Identity Provider and therefore save myself the trouble of implementing my own identity solution which, no matter how secure it is, won't be as secure as a specialist's.
 
@@ -130,7 +131,7 @@ And finally, let's start the actual React application, head to the client folder
 npm start
 ```
 
-##Improvements and new features:
+# Improvements and new features:
 
 This project of course is just a work in progress and can use a lot of changes and is also open to new features, I constructed it in such a way that adding new features won't be a hassle.
 
@@ -142,6 +143,7 @@ Some proposed new features :
 And a lot more features that this project is already structured in a way that makes it easier to add them.
 
 Improvements: 
+- Consider using the React Context api to manage the global state of the application and build a state container for both the "NearbyShops" compoenent and the "LikedShops" componenet instead of passing the state from the "DashboardContainer" to them as props. 
 - Improve Error handeling both on the front-end and back-end. (There is some basic error handeling implemented, but it's far from perfect and doesn't take into consideration a few failure scenarios, which is why the next improvement suggestion is crucial)
 - Implement Unit Tests for each component in the React application.
 - Implement cleanup for the asynchronous requests used in the Container Components as the app doesn't do any cleanup in case the user decides to navigate to a different component while the current one is still doing an asynchronous task such as loading the shops. 
